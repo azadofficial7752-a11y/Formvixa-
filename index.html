@@ -1,526 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FORMVIXA — Perfect Photo & Signature Resizer for Every Online Form</title>
 
-(() => {
-"use strict";
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css"
+/>
 
-const $ = id => document.getElementById(id);
-
-const state = {
-  mode: "photo",
-  original: null,
-  workingCanvas: null,
-  cropper: null,
-  resultBlob: null,
-  resultName: "",
-  originalName: "",
-  previewUrl: null
-};
-
-const controls = [
-  "brightness", "contrast", "saturation",
-  "sharpness", "blur", "grayscale"
-].map($);
-
-function showMessage(text) {
-  $("message").textContent = text;
-  $("message").hidden = !text;
-}
-
-function clearResult() {
-  state.resultBlob = null;
-
-  if (state.previewUrl) {
-    URL.revokeObjectURL(state.previewUrl);
-    state.previewUrl = null;
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    color: #1f2937;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  header {
+    background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+    color: white;
+    padding: 26px 18px;
+    text-align: center;
+    border-radius: 0 0 18px 18px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: 2px;
+  }
+  header p {
+    margin: 8px 0 0;
+    font-size: 16px;
+    opacity: .95;
   }
 
-  $("previewImage").style.display = "none";
-  $("previewImage").removeAttribute("src");
-  $("previewPlaceholder").style.display = "block";
-  $("resultInfo").textContent = "";
-  $("downloadButton").disabled = true;
+  .card {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+
+  .mode-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .mode-buttons button {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #d1d5db;
+    background: white;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .mode-buttons button.active {
+    border-color: #1d4ed8;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .upload-box {
+    border: 2px dashed #94a3b8;
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8fafc;
+  }
+  .upload-box:hover { background: #eff6ff; }
+
+  .editor-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  @media(min-width: 760px) {
+    .editor-grid { grid-template-columns: 1.4fr 1fr; }
+  }
+
+  .image-area {
+    width: 100%;
+    max-height: 430px;
+    overflow: hidden;
+    background: #e5e7eb;
+    border-radius: 10px;
+  }
+  .image-area img {
+    display: block;
+    max-width: 100%;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 12px 0 6px;
+  }
+  input[type="number"], select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .slider-row input[type="range"] { flex: 1; }
+  .slider-value {
+    min-width: 48px;
+    text-align: right;
+    font-weight: bold;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn-primary { background: #1d4ed8; color: white; }
+  .btn-secondary { background: #e5e7eb; color: #111827; }
+  .btn-success { background: #059669; color: white; }
+  .btn-danger { background: #dc2626; color: white; }
+
+  .preview-box {
+    text-align: center;
+  }
+  .preview-box img {
+    max-width: 100%;
+    max-height: 300px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+  }
+
+  .hidden { display: none; }
+  .note {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 8px;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    padding: 20px 0;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>FORMVIXA</h1>
+  <p>Perfect Photo & Signature Resizer for Every Online Form</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="mode-buttons">
+      <button id="photoMode" class="active">Photo</button>
+      <button id="signatureMode">Signature</button>
+    </div>
+
+    <div class="upload-box" id="uploadBox">
+      <strong>Tap here to select image</strong>
+      <p class="note">Supported: JPG, JPEG, PNG, WebP</p>
+      <input type="file" id="fileInput" accept="image/*" class="hidden" />
+    </div>
+  </div>
+
+  <div class="card hidden" id="editorCard">
+    <div class="editor-grid">
+
+      <div>
+        <div class="image-area">
+          <img id="editorImage" alt="Selected image" />
+        </div>
+
+        <button class="btn btn-secondary" id="enableCrop">Enable Crop</button>
+        <button class="btn btn-secondary hidden" id="disableCrop">Disable Crop</button>
+        <button class="btn btn-danger" id="resetBtn">Reset</button>
+      </div>
+
+      <div>
+        <label>Resize Width (px)</label>
+        <input type="number" id="widthInput" min="1" placeholder="Example: 200" />
+
+        <label>Resize Height (px)</label>
+        <input type="number" id="heightInput" min="1" placeholder="Example: 250" />
+
+        <button class="btn btn-secondary" id="lockRatio">Lock Aspect Ratio: OFF</button>
+
+        <label>Brightness</label>
+        <div class="slider-row">
+          <input type="range" id="brightness" min="0" max="200" value="100" />
+          <span class="slider-value" id="brightnessValue">100%</span>
+        </div>
+
+        <label>Contrast</label>
+        <div class="slider-row">
+          <input type="range" id="contrast" min="0" max="200" value="100" />
+          <span class="slider-value" id="contrastValue">100%</span>
+        </div>
+
+        <label>Sharpness / Clean</label>
+        <div class="slider-row">
+          <input type="range" id="sharpness" min="0" max="100" value="0" />
+          <span class="slider-value" id="sharpnessValue">0%</span>
+        </div>
+
+        <label>Output Format</label>
+        <select id="format">
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+
+        <label>Quality</label>
+        <div class="slider-row">
+          <input type="range" id="quality" min="50" max="100" value="95" />
+          <span class="slider-value" id="qualityValue">95%</span>
+        </div>
+
+        <button class="btn btn-primary" id="previewBtn">Update Preview</button>
+        <button class="btn btn-success" id="downloadBtn">Download Image</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card hidden" id="previewCard">
+    <h3>Preview</h3>
+    <div class="preview-box">
+      <img id="previewImage" alt="Preview" />
+    </div>
+    <p class="note" id="previewInfo"></p>
+  </div>
+
+</div>
+
+<footer>
+  FORMVIXA — Resize, crop and clean your photo and signature for online forms.
+</footer>
+
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script>
+const fileInput = document.getElementById("fileInput");
+const uploadBox = document.getElementById("uploadBox");
+const editorCard = document.getElementById("editorCard");
+const previewCard = document.getElementById("previewCard");
+const editorImage = document.getElementById("editorImage");
+const previewImage = document.getElementById("previewImage");
+const previewInfo = document.getElementById("previewInfo");
+
+const photoMode = document.getElementById("photoMode");
+const signatureMode = document.getElementById("signatureMode");
+
+const widthInput = document.getElementById("widthInput");
+const heightInput = document.getElementById("heightInput");
+const lockRatioBtn = document.getElementById("lockRatio");
+
+const brightness = document.getElementById("brightness");
+const contrast = document.getElementById("contrast");
+const sharpness = document.getElementById("sharpness");
+const quality = document.getElementById("quality");
+
+const brightnessValue = document.getElementById("brightnessValue");
+const contrastValue = document.getElementById("contrastValue");
+const sharpnessValue = document.getElementById("sharpnessValue");
+const qualityValue = document.getElementById("qualityValue");
+
+const format = document.getElementById("format");
+const enableCrop = document.getElementById("enableCrop");
+const disableCrop = document.getElementById("disableCrop");
+const resetBtn = document.getElementById("resetBtn");
+const previewBtn = document.getElementById("previewBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+
+let cropper = null;
+let originalImage = null;
+let currentMode = "photo";
+let lockRatio = false;
+let originalRatio = 1;
+
+photoMode.addEventListener("click", () => setMode("photo"));
+signatureMode.addEventListener("click", () => setMode("signature"));
+
+function setMode(mode) {
+  currentMode = mode;
+  photoMode.classList.toggle("active", mode === "photo");
+  signatureMode.classList.toggle("active", mode === "signature");
+  resetAll();
+}
+
+uploadBox.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    editorImage.src = event.target.result;
+    editorCard.classList.remove("hidden");
+
+    editorImage.onload = function() {
+      originalImage = editorImage.src;
+      originalRatio = editorImage.naturalWidth / editorImage.naturalHeight;
+
+      widthInput.value = editorImage.naturalWidth;
+      heightInput.value = editorImage.naturalHeight;
+
+      destroyCropper();
+      createCropper();
+    };
+  };
+  reader.readAsDataURL(file);
+});
+
+function createCropper() {
+  cropper = new Cropper(editorImage, {
+    viewMode: 1,
+    autoCropArea: 1,
+    background: false,
+    responsive: true,
+    checkOrientation: true
+  });
 }
 
 function destroyCropper() {
-  if (state.cropper) {
-    state.cropper.destroy();
-    state.cropper = null;
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
   }
 }
 
-function initCropper(source) {
+enableCrop.addEventListener("click", () => {
+  if (!originalImage) return;
   destroyCropper();
+  createCropper();
+  enableCrop.classList.add("hidden");
+  disableCrop.classList.remove("hidden");
+});
 
-  $("cropSection").hidden = false;
-  $("cropStatus").textContent = "Loading crop tool...";
-
-  const img = $("cropImage");
-  img.onload = () => {
-    if (typeof Cropper === "undefined") {
-      $("cropStatus").textContent =
-        "Crop tool could not load. Check your internet connection and reload.";
-      return;
-    }
-
-    state.cropper = new Cropper(img, {
-      viewMode: 1,
-      autoCropArea: 0.85,
-      responsive: true,
-      background: false,
-      movable: true,
-      zoomable: true,
-      cropBoxMovable: true,
-      cropBoxResizable: true,
-      guides: true,
-      center: true,
-      ready() {
-        $("cropStatus").textContent =
-          "Drag the image or crop handles to select the area you want to keep.";
-      }
-    });
-  };
-
-  img.onerror = () => {
-    $("cropStatus").textContent = "Could not display the crop image.";
-  };
-
-  img.src = source;
-}
-
-function resetImage() {
+disableCrop.addEventListener("click", () => {
   destroyCropper();
-  state.original = null;
-  state.workingCanvas = null;
-  state.originalName = "";
+  editorImage.src = originalImage;
+  enableCrop.classList.remove("hidden");
+  disableCrop.classList.add("hidden");
+});
 
-  $("cropSection").hidden = true;
-  $("fileStatus").textContent = "No image selected yet.";
-  $("fileStatus").className = "status";
-  $("cropStatus").textContent = "";
-  $("resizeButton").disabled = true;
-  showMessage("");
-  clearResult();
-}
+lockRatioBtn.addEventListener("click", () => {
+  lockRatio = !lockRatio;
+  lockRatioBtn.textContent = "Lock Aspect Ratio: " + (lockRatio ? "ON" : "OFF");
+});
 
-function setMode(mode) {
-  state.mode = mode;
-
-  $("photoTab").classList.toggle("active", mode === "photo");
-  $("signatureTab").classList.toggle("active", mode === "signature");
-
-  $("uploadHeading").textContent =
-    mode === "photo" ? "1. Upload Photo" : "1. Upload Signature";
-
-  $("uploadPrompt").textContent =
-    mode === "photo"
-      ? "Tap here to upload your photo"
-      : "Tap here to upload your signature";
-
-  $("widthInput").value = 200;
-  $("heightInput").value = mode === "photo" ? 230 : 100;
-  $("fileInput").value = "";
-  resetAdjustments();
-  resetImage();
-}
-
-function loadCanvas(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-
-      URL.revokeObjectURL(url);
-      resolve(canvas);
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Could not open this image."));
-    };
-
-    img.src = url;
-  });
-}
-
-$("photoTab").addEventListener("click", () => setMode("photo"));
-$("signatureTab").addEventListener("click", () => setMode("signature"));
-
-$("fileInput").addEventListener("change", async event => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    showMessage("Please select a JPG, PNG or WebP image.");
-    event.target.value = "";
-    return;
-  }
-
-  if (file.size > 20 * 1024 * 1024) {
-    showMessage("Maximum upload size is 20 MB.");
-    event.target.value = "";
-    return;
-  }
-
-  resetImage();
-  showMessage("Loading image...");
-
-  try {
-    const canvas = await loadCanvas(file);
-
-    state.original = canvas;
-    state.workingCanvas = canvas;
-    state.originalName =
-      file.name.replace(/\.[^.]+$/, "") || "formvixa-image";
-
-    $("fileStatus").textContent =
-      "✓ Upload complete: " + file.name + " · " +
-      canvas.width + " × " + canvas.height + " px · " +
-      (file.size / 1024).toFixed(1) + " KB";
-
-    $("fileStatus").className = "status success";
-    $("resizeButton").disabled = false;
-
-    clearResult();
-    initCropper(canvas.toDataURL("image/png"));
-    showMessage("");
-    updateAdjustmentLabels();
-  } catch (error) {
-    showMessage(error.message || "Could not load the image.");
+widthInput.addEventListener("input", () => {
+  if (lockRatio && widthInput.value) {
+    heightInput.value = Math.round(widthInput.value / originalRatio);
   }
 });
 
-// Apply Crop: keep only the selected part.
-$("applyCrop").addEventListener("click", () => {
-  if (!state.original || !state.cropper) {
-    showMessage("The crop tool is not ready. Reload the page and try again.");
-    return;
+heightInput.addEventListener("input", () => {
+  if (lockRatio && heightInput.value) {
+    widthInput.value = Math.round(heightInput.value * originalRatio);
   }
+});
 
-  try {
-    const cropped = state.cropper.getCroppedCanvas({
+brightness.addEventListener("input", () => {
+  brightnessValue.textContent = brightness.value + "%";
+});
+
+contrast.addEventListener("input", () => {
+  contrastValue.textContent = contrast.value + "%";
+});
+
+sharpness.addEventListener("input", () => {
+  sharpnessValue.textContent = sharpness.value + "%";
+});
+
+quality.addEventListener("input", () => {
+  qualityValue.textContent = quality.value + "%";
+});
+
+function getProcessedImage() {
+  let canvas;
+
+  if (cropper) {
+    canvas = cropper.getCroppedCanvas({
       imageSmoothingEnabled: true,
       imageSmoothingQuality: "high"
     });
-
-    if (!cropped || !cropped.width || !cropped.height) {
-      showMessage("Please select a crop area first.");
-      return;
-    }
-
-    state.workingCanvas = cropped;
-    clearResult();
-
-    // Reinitialize the cropper with the cropped image.
-    // Further cropping remains possible.
-    initCropper(cropped.toDataURL("image/png"));
-
-    $("cropStatus").textContent =
-      "✓ Crop applied. Only the selected area will be kept.";
-
-    showMessage("Crop applied successfully.");
-  } catch (error) {
-    showMessage("Could not apply crop. Please try again.");
-  }
-});
-
-// Reset Crop: restore the original image.
-$("resetCrop").addEventListener("click", () => {
-  if (!state.original) {
-    showMessage("Please upload an image first.");
-    return;
+  } else {
+    const img = new Image();
+    img.src = originalImage;
+    canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext("2d").drawImage(img, 0, 0);
   }
 
-  state.workingCanvas = state.original;
-  clearResult();
-  initCropper(state.original.toDataURL("image/png"));
-  showMessage("Crop reset. Original image restored.");
-});
+  const targetWidth = parseInt(widthInput.value) || canvas.width;
+  const targetHeight = parseInt(heightInput.value) || canvas.height;
 
-function updateAdjustmentLabels() {
-  $("brightnessValue").textContent = $("brightness").value + "%";
-  $("contrastValue").textContent = $("contrast").value + "%";
-  $("saturationValue").textContent = $("saturation").value + "%";
-  $("sharpnessValue").textContent = $("sharpness").value;
-  $("blurValue").textContent = $("blur").value + " px";
-}
+  const resized = document.createElement("canvas");
+  resized.width = targetWidth;
+  resized.height = targetHeight;
 
-// Preview common adjustments on the crop image.
-// Final adjustments are also applied to the exported image.
-function updateAdjustmentPreview() {
-  const img = $("cropImage");
-
-  img.style.filter =
-    "brightness(" + $("brightness").value + "%) " +
-    "contrast(" + $("contrast").value + "%) " +
-    "saturate(" + $("saturation").value + "%) " +
-    "blur(" + $("blur").value + "px)" +
-    ($("grayscale").checked ? " grayscale(100%)" : "");
-
-  updateAdjustmentLabels();
-  clearResult();
-}
-
-function resetAdjustments() {
-  $("brightness").value = 100;
-  $("contrast").value = 100;
-  $("saturation").value = 100;
-  $("sharpness").value = 0;
-  $("blur").value = 0;
-  $("grayscale").checked = false;
-
-  updateAdjustmentPreview();
-}
-
-controls.forEach(control => {
-  control.addEventListener("input", updateAdjustmentPreview);
-});
-
-$("resetAdjustments").addEventListener("click", () => {
-  resetAdjustments();
-  showMessage("Adjustments reset to their default values.");
-});
-
-function applyAdjustments(source) {
-  const canvas = document.createElement("canvas");
-  canvas.width = source.width;
-  canvas.height = source.height;
-
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const ctx = resized.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
   ctx.filter =
-    "brightness(" + $("brightness").value + "%) " +
-    "contrast(" + $("contrast").value + "%) " +
-    "saturate(" + $("saturation").value + "%) " +
-    "blur(" + $("blur").value + "px)" +
-    ($("grayscale").checked ? " grayscale(100%)" : "");
+    "brightness(" + brightness.value + "%) " +
+    "contrast(" + contrast.value + "%)";
 
-  ctx.drawImage(source, 0, 0);
+  ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
   ctx.filter = "none";
 
-  // Approximate sharpening using a simple edge-enhancement filter.
-  const amount = Number($("sharpness").value);
+  const sharp = parseInt(sharpness.value);
 
-  if (amount > 0 && canvas.width > 2 && canvas.height > 2) {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const src = imageData.data;
-    const original = new Uint8ClampedArray(src);
-    const strength = amount * 0.35;
-    const w = canvas.width;
-    const h = canvas.height;
+  if (sharp > 0) {
+    applySharpness(resized, sharp / 100);
+  }
 
-    for (let y = 1; y < h - 1; y++) {
-      for (let x = 1; x < w - 1; x++) {
-        const i = (y * w + x) * 4;
+  return resized;
+}
 
-        for (let c = 0; c < 3; c++) {
-          const center = original[i + c];
-          const average = (
-            original[i - 4 + c] +
-            original[i + 4 + c] +
-            original[i - w * 4 + c] +
-            original[i + w * 4 + c]
-          ) / 4;
+function applySharpness(canvas, amount) {
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
 
-          src[i + c] = Math.max(0, Math.min(
-            255, center + (center - average) * strength
-          ));
-        }
+  const src = ctx.getImageData(0, 0, width, height);
+  const out = ctx.createImageData(width, height);
+
+  const center = 1 + 4 * amount;
+  const side = -amount;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      for (let c = 0; c < 3; c++) {
+        const i = (y * width + x) * 4 + c;
+
+        const current = src.data[i];
+        const left = x > 0 ? src.data[i - 4] : current;
+        const right = x < width - 1 ? src.data[i + 4] : current;
+        const top = y > 0 ? src.data[i - width * 4] : current;
+        const bottom = y < height - 1 ? src.data[i + width * 4] : current;
+
+        let value =
+          center * current +
+          side * left +
+          side * right +
+          side * top +
+          side * bottom;
+
+        out.data[i] = Math.max(0, Math.min(255, value));
       }
-    }
 
-    ctx.putImageData(imageData, 0, 0);
+      const alphaIndex = (y * width + x) * 4 + 3;
+      out.data[alphaIndex] = src.data[alphaIndex];
+    }
   }
 
-  return canvas;
+  ctx.putImageData(out, 0, 0);
 }
 
-function makeBlob(canvas, type, quality) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => {
-      if (blob) resolve(blob);
-      else reject(new Error("Could not create the output image."));
-    }, type, quality);
-  });
-}
+previewBtn.addEventListener("click", () => {
+  if (!originalImage) return;
 
-async function compressToTarget(canvas, type, targetKB) {
-  const targetBytes = targetKB * 1024;
+  const canvas = getProcessedImage();
+  const type = format.value;
+  const q = parseInt(quality.value) / 100;
 
-  if (type === "image/png") {
-    const blob = await makeBlob(canvas, type);
-    return { blob, reached: blob.size <= targetBytes };
-  }
+  previewImage.src = canvas.toDataURL(type, q);
 
-  // Search for the highest quality that fits the target size.
-  let low = 0.03;
-  let high = 0.98;
-  let best = null;
-
-  for (let i = 0; i < 12; i++) {
-    const quality = (low + high) / 2;
-    const blob = await makeBlob(canvas, type, quality);
-
-    if (blob.size <= targetBytes) {
-      best = blob;
-      low = quality;
-    } else {
-      high = quality;
-    }
-  }
-
-  // Return the smallest attempted file if the target was not reached.
-  if (!best) {
-    best = await makeBlob(canvas, type, 0.03);
-  }
-
-  return { blob: best, reached: best.size <= targetBytes };
-}
-
-$("resizeButton").addEventListener("click", async () => {
-  if (!state.workingCanvas) {
-    showMessage("Please upload an image first.");
-    return;
-  }
-
-  const width = Number($("widthInput").value);
-  const height = Number($("heightInput").value);
-  const targetKB = Number($("targetKB").value);
-  const type = $("format").value;
-
-  if (!Number.isInteger(width) || !Number.isInteger(height) ||
-      width < 1 || height < 1 || width > 10000 || height > 10000) {
-    showMessage("Enter width and height between 1 and 10000 pixels.");
-    return;
-  }
-
-  if (!Number.isFinite(targetKB) || targetKB < 1 || targetKB > 20000) {
-    showMessage("Enter a target file size between 1 and 20000 KB.");
-    return;
-  }
-
-  $("resizeButton").disabled = true;
-  $("resizeButton").textContent = "Processing...";
-  showMessage("Applying crop, adjustments and resize. Please wait...");
-
-  try {
-    const adjusted = applyAdjustments(state.workingCanvas);
-    const output = document.createElement("canvas");
-
-    let outWidth = width;
-    let outHeight = height;
-
-    if ($("keepRatio").checked) {
-      const ratio = Math.min(
-        width / adjusted.width,
-        height / adjusted.height
-      );
-
-      outWidth = Math.max(1, Math.round(adjusted.width * ratio));
-      outHeight = Math.max(1, Math.round(adjusted.height * ratio));
-    }
-
-    output.width = outWidth;
-    output.height = outHeight;
-
-    const ctx = output.getContext("2d");
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(adjusted, 0, 0, outWidth, outHeight);
-
-    let result = await compressToTarget(output, type, targetKB);
-
-    // PNG has no quality setting. If necessary, reduce dimensions
-    // gradually to try to reach the requested maximum size.
-    if (type === "image/png" && !result.reached) {
-      let scale = 0.9;
-
-      for (let i = 0; i < 12 && !result.reached; i++) {
-        const smaller = document.createElement("canvas");
-        smaller.width = Math.max(1, Math.floor(outWidth * scale));
-        smaller.height = Math.max(1, Math.floor(outHeight * scale));
-
-        const smallCtx = smaller.getContext("2d");
-        smallCtx.imageSmoothingEnabled = true;
-        smallCtx.imageSmoothingQuality = "high";
-        smallCtx.drawImage(output, 0, 0, smaller.width, smaller.height);
-
-        result = await compressToTarget(smaller, type, targetKB);
-
-        if (result.reached) {
-          output.width = smaller.width;
-          output.height = smaller.height;
-          outWidth = smaller.width;
-          outHeight = smaller.height;
-          break;
-        }
-
-        scale *= 0.8;
-      }
-    }
-
-    if (!result.blob) {
-      throw new Error("Could not create the resized image.");
-    }
-
-    state.resultBlob = result.blob;
-
-    const ext = type === "image/jpeg" ? "jpg" :
-      type === "image/png" ? "png" : "webp";
-
-    state.resultName = state.originalName + "-resized." + ext;
-
-    if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
-    state.previewUrl = URL.createObjectURL(result.blob);
-
-    $("previewImage").src = state.previewUrl;
-    $("previewImage").style.display = "block";
-    $("previewPlaceholder").style.display = "none";
-
-    $("resultInfo").textContent =
-      outWidth + " × " + outHeight + " px · " +
-      (result.blob.size / 1024).toFixed(1) + " KB · " +
-      ext.toUpperCase();
-
-    $("downloadButton").disabled = false;
-
-    showMessage(
-      "✓ Image resized successfully. " +
-      (result.reached
-        ? "The target file size was reached."
-        : "The requested file size could not be reached with these settings.")
-    );
-  } catch (error) {
-    showMessage(error.message || "An error occurred while resizing.");
-  } finally {
-    $("resizeButton").disabled = !state.workingCanvas;
-    $("resizeButton").textContent = "Resize Image";
-  }
+  previewCard.classList.remove("hidden");
+  previewInfo.textContent =
+    "Output size: " + canvas.width + " x " + canvas.height + " px";
 });
 
-$("downloadButton").addEventListener("click", () => {
-  if (!state.resultBlob) {
-    showMessage("Please resize the image before downloading.");
-    return;
-  }
+downloadBtn.addEventListener("click", () => {
+  if (!originalImage) return;
 
-  const url = URL.createObjectURL(state.resultBlob);
+  const canvas = getProcessedImage();
+  const type = format.value;
+  const q = parseInt(quality.value) / 100;
+
+  const extension =
+    type === "image/jpeg" ? "jpg" :
+    type === "image/png" ? "png" : "webp";
+
   const link = document.createElement("a");
-
-  link.href = url;
-  link.download = state.resultName;
-  document.body.appendChild(link);
+  link.download = currentMode + "-resized." + extension;
+  link.href = canvas.toDataURL(type, q);
   link.click();
-  link.remove();
-
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
 });
 
-updateAdjustmentLabels();
-})();
-        
+resetBtn.addEventListener("click", resetAll);
+
+function resetAll() {
+  destroyCropper();
+  originalImage = null;
+  fileInput.value = "";
+
+  editorCard.classList.add("hidden");
+  previewCard.classList.add("hidden");
+
+  widthInput.value = "";
+  heightInput.value = "";
+  brightness.value = 100;
+  contrast.value = 100;
+  sharpness.value = 0;
+  quality.value = 95;
+
+  brightnessValue.textContent = "100%";
+  contrastValue.textContent = "100%";
+  sharpnessValue.textContent = "0%";
+  qualityValue.textContent = "95%";
+
+  enableCrop.classList.remove("hidden");
+  disableCrop.classList.add("hidden");
+}
+</script>
+
+</body>
+          </html>
