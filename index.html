@@ -343,6 +343,90 @@
       .stage { height: 300px; }
       .actions .btn { flex: 1; padding: 11px 8px; }
     }
+
+    /* Added information sections only */
+
+    .fv-support .fv-support-intro {
+      margin: -4px 0 18px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .fv-support .fv-support-section {
+      margin-top: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .fv-support .fv-support-section summary {
+      padding: 17px;
+      cursor: pointer;
+      color: #16213b;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.5;
+    }
+
+    .fv-support .fv-support-section summary::marker {
+      color: #4f46e5;
+    }
+
+    .fv-support .fv-support-section[open] summary {
+      background: #f8faff;
+      border-bottom: 1px solid #e2e8f0;
+      color: #4338ca;
+    }
+
+    .fv-support .fv-support-content {
+      padding: 4px 17px 16px;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .fv-support .fv-support-content h3 {
+      margin: 20px 0 6px;
+      color: #16213b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .fv-support .fv-support-content p {
+      margin: 12px 0;
+    }
+
+    .fv-support .fv-support-content a {
+      color: #4338ca;
+      text-underline-offset: 3px;
+    }
+
+    .fv-support .fv-email-box {
+      padding: 14px;
+      background: #eef2ff;
+      border: 1px solid #e0e7ff;
+      border-radius: 10px;
+    }
+
+    .fv-support .fv-email-box span {
+      display: block;
+      margin-bottom: 4px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .fv-support .fv-email-box a {
+      font-weight: 600;
+    }
+
+    .fv-support summary:focus-visible,
+    .fv-support a:focus-visible {
+      outline: 3px solid #a5b4fc;
+      outline-offset: 3px;
+    }
   </style>
 </head>
 
@@ -514,6 +598,192 @@
         </p>
       </section>
     </div>
+
+    <!-- Added About, Contact, Help and Privacy sections -->
+
+    <section class="card fv-support" aria-labelledby="fv-support-title">
+      <div class="section-heading">
+        <h2 id="fv-support-title">About &amp; Support</h2>
+        <span class="step">FORMVIXA</span>
+      </div>
+
+      <p class="fv-support-intro">
+        Learn about FORMVIXA, find answers and get in touch.
+      </p>
+
+      <details class="fv-support-section" id="fv-about">
+        <summary>About Us</summary>
+
+        <div class="fv-support-content">
+          <p>
+            FORMVIXA is an online tool designed to help you prepare
+            photos and signatures for online forms. Resize and crop
+            images, adjust brightness, contrast, saturation and
+            sharpness, and download your output in JPEG, PNG or
+            WebP format.
+          </p>
+
+          <p>
+            Our goal is to make photo and signature preparation
+            simple and convenient.
+          </p>
+
+          <p>
+            Please check the required dimensions, file format and
+            file size on your application portal before uploading.
+            FORMVIXA is an independent tool and does not guarantee
+            acceptance by any application portal.
+          </p>
+        </div>
+      </details>
+
+      <details class="fv-support-section" id="fv-contact">
+        <summary>Contact Us</summary>
+
+        <div class="fv-support-content">
+          <p>
+            Having trouble with FORMVIXA? Contact us for technical
+            issues, feedback or suggestions. Please mention your
+            device, browser and the problem you experienced.
+          </p>
+
+          <p class="fv-email-box">
+            <span>Support Email</span>
+            <a href="mailto:azadofficial7752@gmail.com">
+              azadofficial7752@gmail.com
+            </a>
+          </p>
+
+          <p>
+            Please do not send private photos, signatures, identity
+            documents, passwords or other sensitive information.
+            If an example is needed, use a non-sensitive sample.
+          </p>
+        </div>
+      </details>
+
+      <details class="fv-support-section" id="fv-help">
+        <summary>Help / FAQ</summary>
+
+        <div class="fv-support-content">
+          <h3>How do I resize a photo or signature?</h3>
+          <p>
+            Select Photo or Signature, tap Choose an image and
+            select your file. Enter your required width and height
+            in pixels, choose a download format, and tap Download Image.
+          </p>
+
+          <h3>How do I crop an image?</h3>
+          <p>
+            Drag the crop box corners to select the area you want
+            to keep. Tap Apply Crop to set the output dimensions
+            to the selected area. You can then enter different
+            dimensions if required. Your result appears in Output Preview.
+          </p>
+
+          <h3>How do I change brightness and sharpness?</h3>
+          <p>
+            Move the Brightness or Sharpness slider in Resize &amp;
+            Enhance. Changes appear automatically in Output Preview.
+            Contrast and Saturation can be adjusted in the same way.
+            The crop editor continues to show the original image.
+          </p>
+
+          <h3>Which download formats are supported?</h3>
+          <p>
+            FORMVIXA offers JPEG, PNG and WebP export. Format
+            availability depends on your browser. If your browser
+            returns a different supported format, the download
+            message indicates the actual format.
+          </p>
+
+          <h3>Why does my enlarged image look blurry?</h3>
+          <p>
+            Enlarging an image does not restore detail missing
+            from the original. Start with a clear image and avoid
+            excessive enlargement. Sharpness can enhance edges,
+            but it cannot recover missing original details.
+          </p>
+
+          <h3>Does FORMVIXA support an exact file size in KB?</h3>
+          <p>
+            This version does not include an exact target-KB
+            feature. You can change the output dimensions and
+            adjust export quality for JPEG or WebP to influence
+            file size. Check the downloaded file size before
+            uploading it to an application form.
+          </p>
+
+          <h3>How do I keep my image from stretching?</h3>
+          <p>
+            Keep Keep aspect ratio enabled. Turn it off only
+            when you need to set width and height independently.
+          </p>
+
+          <h3>How do I undo my changes?</h3>
+          <p>
+            Tap Reset Adjustments to restore the adjustment sliders.
+            Tap Reset All to reset the crop and adjustments.
+            Tap Full Image to select the full original image.
+          </p>
+        </div>
+      </details>
+
+      <details class="fv-support-section" id="fv-privacy">
+        <summary>Privacy Policy</summary>
+
+        <div class="fv-support-content">
+          <p>
+            This notice describes how the current browser-based
+            version of FORMVIXA handles images and related information.
+          </p>
+
+          <h3>Photo and signature processing</h3>
+          <p>
+            The image you select is processed within your browser.
+            The current image-editing code does not upload your
+            selected photo or signature to a server for processing.
+            Image previews and downloadable files are generated
+            in your browser.
+          </p>
+
+          <h3>Hosting and external resources</h3>
+          <p>
+            FORMVIXA is hosted on Vercel and loads the Cropper.js
+            library and stylesheet from jsDelivr. Your browser
+            connects to these services when loading the website.
+            These providers may process connection information,
+            such as your IP address and request details, under
+            their own privacy policies.
+          </p>
+
+          <h3>Email communication</h3>
+          <p>
+            If you contact us by email, we receive your email address
+            and the information you send. This information may be
+            used to respond to your message and understand the
+            issue you report. Email communication also involves
+            the relevant email service providers.
+          </p>
+
+          <h3>Analytics and advertising</h3>
+          <p>
+            The current tool code does not include analytics or
+            advertising scripts. This notice should be updated
+            if analytics, advertising, accounts, server uploads
+            or other data-handling features are added.
+          </p>
+
+          <h3>Contact</h3>
+          <p>
+            For privacy questions, email
+            <a href="mailto:azadofficial7752@gmail.com">
+              azadofficial7752@gmail.com
+            </a>.
+          </p>
+        </div>
+      </details>
+    </section>
   </main>
 
   <footer>
@@ -659,7 +929,7 @@
 
         if (version !== imageVersion) return;
 
-        image.onload = null;
+      image.onload = null;
         image.onerror = null;
 
         setDimensions(image.naturalWidth, image.naturalHeight);
@@ -924,7 +1194,8 @@
         );
       });
     }
-     $("download").addEventListener("click", async () => {
+
+    $("download").addEventListener("click", async () => {
       const button = $("download");
 
       if (!ready) {
